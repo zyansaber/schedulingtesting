@@ -1,7 +1,6 @@
 
 import React, { useState } from "react";
 
-// 转换 Firebase 原始字段为标准格式
 const transformData = (raw) => {
   return raw
     .map(item => {
@@ -16,85 +15,66 @@ const transformData = (raw) => {
     .filter(Boolean);
 };
 
-const groupBy = (arr, key) => {
-  return arr.reduce((acc, item) => {
-    const groupKey = item[key] || "Unknown";
-    acc[groupKey] = acc[groupKey] || [];
-    acc[groupKey].push(item);
-    return acc;
-  }, {});
-};
-
-const getMonthWeek = (date) => {
-  const d = new Date(date);
-  const month = d.getMonth() + 1;
-  const week = Math.ceil((d.getDate()) / 7);
-  return `M${month}-W${week}`;
-};
-
-const AllocationSummary = ({ data }) => {
+const AllocationSummary = ({ data, dealerColors }) => {
   const transformed = transformData(data);
+  const [expandedMonths, setExpandedMonths] = useState({});
 
-  if (!transformed || !Array.isArray(transformed) || transformed.length === 0) {
-    return <div className="text-center text-gray-500 mt-10">No schedule data available.</div>;
-  }
+  const toggleMonth = (month) => {
+    setExpandedMonths(prev => ({ ...prev, [month]: !prev[month] }));
+  };
 
   const data2025 = transformed.filter(item => {
     const d = new Date(item.forecastProductionDate);
     return d.getFullYear() === 2025;
   });
 
-  if (data2025.length === 0) {
-    return <div className="text-center text-gray-500 mt-10">No 2025 forecast data found.</div>;
-  }
+  if (!data2025.length) return <div className="text-center text-gray-500 mt-10">No 2025 forecast data found.</div>;
 
-  const dealers = Array.from(new Set(data2025.map(d => d.dealer))).sort();
-  const periods = Array.from(
-    new Set(data2025.map(d => getMonthWeek(d.forecastProductionDate)))
-  ).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
-
-  const matrix = {};
-
+  const groupByMonth = {};
   data2025.forEach(item => {
-    const dealer = item.dealer || "Unknown";
-    const period = getMonthWeek(item.forecastProductionDate);
-    const isOccupied = item.chassisNo ? "Occupied" : "Empty";
-
-    if (!matrix[dealer]) matrix[dealer] = {};
-    if (!matrix[dealer][period]) matrix[dealer][period] = { Occupied: 0, Empty: 0 };
-
-    matrix[dealer][period][isOccupied]++;
+    const date = new Date(item.forecastProductionDate);
+    const monthKey = date.toLocaleString('default', { month: 'long' });
+    if (!groupByMonth[monthKey]) groupByMonth[monthKey] = [];
+    groupByMonth[monthKey].push(item);
   });
 
   return (
-    <div className="overflow-auto p-4">
-      <h2 className="text-xl font-semibold mb-4">Allocation Summary (2025)</h2>
-      <table className="min-w-full text-sm border-collapse border">
-        <thead>
-          <tr>
-            <th className="border px-2 py-1 bg-gray-100 sticky left-0 z-10">Dealer</th>
-            {periods.map(p => (
-              <React.Fragment key={p}>
-                <th className="border px-2 py-1 bg-gray-100">{p} - Occ</th>
-                <th className="border px-2 py-1 bg-gray-100">{p} - Emp</th>
-              </React.Fragment>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {dealers.map(dealer => (
-            <tr key={dealer}>
-              <td className="border px-2 py-1 font-medium sticky left-0 bg-white z-0">{dealer}</td>
-              {periods.map(p => (
-                <React.Fragment key={p}>
-                  <td className="border px-2 py-1 text-center text-green-600">{matrix[dealer]?.[p]?.Occupied || 0}</td>
-                  <td className="border px-2 py-1 text-center text-red-500">{matrix[dealer]?.[p]?.Empty || 0}</td>
-                </React.Fragment>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div className="p-4">
+      <h2 className="text-xl font-bold mb-4">Allocation Summary (2025)</h2>
+      {Object.entries(groupByMonth).map(([month, records]) => (
+        <div key={month} className="mb-4 border rounded shadow bg-white">
+          <div className="flex justify-between items-center px-4 py-2 bg-gray-100 font-semibold cursor-pointer" onClick={() => toggleMonth(month)}>
+            <span>{month} ({records.length} records)</span>
+            <span>{expandedMonths[month] ? "▲" : "▼"}</span>
+          </div>
+          {expandedMonths[month] && (
+            <table className="min-w-full text-sm table-auto border-t">
+              <thead>
+                <tr className="bg-gray-50">
+                  <th className="border px-2 py-1">Date</th>
+                  <th className="border px-2 py-1">Dealer</th>
+                  <th className="border px-2 py-1">Status</th>
+                  <th className="border px-2 py-1">Chassis No</th>
+                </tr>
+              </thead>
+              <tbody>
+                {records.sort((a, b) => new Date(a.forecastProductionDate) - new Date(b.forecastProductionDate)).map((rec, i) => (
+                  <tr key={i}>
+                    <td className="border px-2 py-1">{rec.forecastProductionDate}</td>
+                    <td className="border px-2 py-1">
+                      <span className="px-2 py-1 rounded" style={{ backgroundColor: dealerColors?.[rec.dealer] || "#f0f0f0" }}>
+                        {rec.dealer}
+                      </span>
+                    </td>
+                    <td className="border px-2 py-1">{rec.chassisNo ? "Occupied" : "Empty"}</td>
+                    <td className="border px-2 py-1">{rec.chassisNo || "-"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      ))}
     </div>
   );
 };

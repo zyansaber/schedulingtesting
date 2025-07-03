@@ -1,7 +1,3 @@
-# 请使用以下代码替换你的 AllocationSummary.jsx
-# ✅ 此版本支持 tickbox 多选月份、主表格内展开、双列 Occ/Emp、Dealer 彩色圆角名牌
-
-
 import React, { useState } from "react";
 
 // 转换原始数据格式

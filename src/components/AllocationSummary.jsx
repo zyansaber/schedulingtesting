@@ -1,3 +1,4 @@
+# 请替换 AllocationSummary.jsx，用于美化最终版本，带更大字体、背景、hover、高可读性样式
 
 import React, { useState } from "react";
 

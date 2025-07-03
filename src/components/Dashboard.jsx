@@ -1,25 +1,31 @@
 
-import React from "react";
+import React, { useState } from "react";
 import DashboardOverview from "./DashboardOverview";
 import AllocationSummary from "./AllocationSummary";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 const Dashboard = ({ scheduleData }) => {
+  const [page, setPage] = useState("dashboard");
+
   return (
-    <Tabs defaultValue="dashboard" className="w-full">
-      <TabsList>
-        <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
-        <TabsTrigger value="allocation">Allocation Summary</TabsTrigger>
-      </TabsList>
+    <div className="w-full p-4">
+      <div className="flex space-x-4 mb-4">
+        <button
+          onClick={() => setPage("dashboard")}
+          className={\`px-4 py-2 rounded \${page === "dashboard" ? "bg-blue-600 text-white" : "bg-gray-200"}\`}
+        >
+          Dashboard
+        </button>
+        <button
+          onClick={() => setPage("allocation")}
+          className={\`px-4 py-2 rounded \${page === "allocation" ? "bg-blue-600 text-white" : "bg-gray-200"}\`}
+        >
+          Allocation Summary
+        </button>
+      </div>
 
-      <TabsContent value="dashboard">
-        <DashboardOverview />
-      </TabsContent>
-
-      <TabsContent value="allocation">
-        <AllocationSummary data={scheduleData} />
-      </TabsContent>
-    </Tabs>
+      {page === "dashboard" && <DashboardOverview />}
+      {page === "allocation" && <AllocationSummary data={scheduleData} />}
+    </div>
   );
 };
 

@@ -1,7 +1,21 @@
 
 import React, { useState } from "react";
 
-// 工具函数
+// 转换 Firebase 原始字段为标准格式
+const transformData = (raw) => {
+  return raw
+    .map(item => {
+      if (!item["Forecast Production Date"]) return null;
+      const [day, month, year] = item["Forecast Production Date"].split("/");
+      return {
+        forecastProductionDate: `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`,
+        chassisNo: item["Chassis"] || "",
+        dealer: item["Dealer"] || "Unknown"
+      };
+    })
+    .filter(Boolean);
+};
+
 const groupBy = (arr, key) => {
   return arr.reduce((acc, item) => {
     const groupKey = item[key] || "Unknown";
@@ -19,11 +33,13 @@ const getMonthWeek = (date) => {
 };
 
 const AllocationSummary = ({ data }) => {
-  if (!data || !Array.isArray(data) || data.length === 0) {
+  const transformed = transformData(data);
+
+  if (!transformed || !Array.isArray(transformed) || transformed.length === 0) {
     return <div className="text-center text-gray-500 mt-10">No schedule data available.</div>;
   }
 
-  const data2025 = data.filter(item => {
+  const data2025 = transformed.filter(item => {
     const d = new Date(item.forecastProductionDate);
     return d.getFullYear() === 2025;
   });

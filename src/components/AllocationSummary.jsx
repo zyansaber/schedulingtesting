@@ -17,7 +17,7 @@ const transformData = (raw) => {
 
 const AllocationSummary = ({ data, dealerColors }) => {
   const transformed = transformData(data);
-  const [expandedMonths, setExpandedMonths] = useState([]);
+  const [expandedMonth, setExpandedMonth] = useState(null);
   const [visibleMonths, setVisibleMonths] = useState([]);
 
   const data2025 = transformed.filter(item => {
@@ -50,16 +50,14 @@ const AllocationSummary = ({ data, dealerColors }) => {
 
   const allMonths = Object.keys(monthDealerMap).sort();
 
-  const toggleExpand = (month) => {
-    setExpandedMonths(prev =>
+  const toggleMonth = (month) => {
+    setVisibleMonths(prev =>
       prev.includes(month) ? prev.filter(m => m !== month) : [...prev, month]
     );
   };
 
-  const toggleVisible = (month) => {
-    setVisibleMonths(prev =>
-      prev.includes(month) ? prev.filter(m => m !== month) : [...prev, month]
-    );
+  const handleExpand = (month) => {
+    setExpandedMonth(prev => (prev === month ? null : month));
   };
 
   return (
@@ -74,7 +72,7 @@ const AllocationSummary = ({ data, dealerColors }) => {
               <input
                 type="checkbox"
                 checked={visibleMonths.includes(month)}
-                onChange={() => toggleVisible(month)}
+                onChange={() => toggleMonth(month)}
               />
               {month}
             </label>
@@ -87,17 +85,26 @@ const AllocationSummary = ({ data, dealerColors }) => {
           <tr>
             <th className="border p-2 bg-gray-100 sticky left-0 z-10 w-40">Dealer</th>
             {visibleMonths.map(month => (
-              <th key={month} className="border p-2 bg-gray-100 text-center min-w-40">
+              <th key={month} colSpan={2} className="border p-2 bg-gray-100 text-center min-w-32">
                 {month}
                 <div>
                   <button
-                    onClick={() => toggleExpand(month)}
+                    onClick={() => handleExpand(month)}
                     className="text-xs text-blue-600 underline"
                   >
-                    {expandedMonths.includes(month) ? "Collapse" : "Expand"}
+                    {expandedMonth === month ? "Collapse" : "Expand"}
                   </button>
                 </div>
               </th>
+            ))}
+          </tr>
+          <tr>
+            <th className="border bg-gray-50 sticky left-0 z-10"></th>
+            {visibleMonths.map(month => (
+              <React.Fragment key={month + "-sub"}>
+                <th className="border text-center text-green-700">Occ</th>
+                <th className="border text-center text-red-700">Emp</th>
+              </React.Fragment>
             ))}
           </tr>
         </thead>
@@ -119,49 +126,29 @@ const AllocationSummary = ({ data, dealerColors }) => {
                 {visibleMonths.map(month => {
                   const stats = monthDealerMap[month]?.[dealer] || { Occupied: 0, Empty: 0 };
                   return (
-                    <td key={month} className="border p-2 text-center">
-                      <div className="text-green-600">Occ: {stats.Occupied}</div>
-                      <div className="text-red-600">Emp: {stats.Empty}</div>
-                    </td>
+                    <React.Fragment key={month}>
+                      <td className="border p-2 text-center text-green-600">{stats.Occupied}</td>
+                      <td className="border p-2 text-center text-red-600">{stats.Empty}</td>
+                    </React.Fragment>
                   );
                 })}
               </tr>
-
-              {visibleMonths.map(month =>
-                expandedMonths.includes(month) ? (
-                  <tr key={month + "-" + dealer + "-expand"}>
-                    <td className="border p-2 bg-gray-50 italic text-right pr-4">
-                      <span className="text-xs text-gray-600">Details for {month}</span>
-                    </td>
-                    <td colSpan={visibleMonths.length} className="border p-2">
-                      <div className="overflow-x-auto">
-                        <table className="text-xs border table-auto w-full">
-                          <thead>
-                            <tr className="bg-gray-100">
-                              <th className="border px-1 py-1 text-left">Date</th>
-                              <th className="border px-1 py-1 text-green-700">Occ</th>
-                              <th className="border px-1 py-1 text-red-700">Emp</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {Object.entries(monthDateMap[month] || {})
-                              .sort(([a], [b]) => a.localeCompare(b))
-                              .map(([date, dealers]) => {
-                                const s = dealers[dealer] || { Occupied: 0, Empty: 0 };
-                                return (
-                                  <tr key={date}>
-                                    <td className="border px-1 py-1">{date}</td>
-                                    <td className="border px-1 py-1 text-green-600 text-center">{s.Occupied}</td>
-                                    <td className="border px-1 py-1 text-red-600 text-center">{s.Empty}</td>
-                                  </tr>
-                                );
-                              })}
-                          </tbody>
-                        </table>
-                      </div>
-                    </td>
+              {expandedMonth === visibleMonths.find(m => m === expandedMonth) && (
+                Object.entries(monthDateMap[expandedMonth] || {}).sort().map(([date, dealers]) => (
+                  <tr key={dealer + date}>
+                    <td className="border px-2 py-1 text-xs text-gray-500 sticky left-0 bg-white z-0">{date}</td>
+                    {visibleMonths.map(month => {
+                      if (month !== expandedMonth) return <td key={month} colSpan={2}></td>;
+                      const s = dealers[dealer] || { Occupied: 0, Empty: 0 };
+                      return (
+                        <React.Fragment key={month + dealer + date}>
+                          <td className="border px-1 py-1 text-center text-green-600">{s.Occupied}</td>
+                          <td className="border px-1 py-1 text-center text-red-600">{s.Empty}</td>
+                        </React.Fragment>
+                      );
+                    })}
                   </tr>
-                ) : null
+                ))
               )}
             </React.Fragment>
           ))}

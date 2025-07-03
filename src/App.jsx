@@ -10,18 +10,6 @@ import LoadingOverlay from './components/LoadingOverlay';
 import AllocationSummary from './components/AllocationSummary';
 import { fetchScheduleData, mockScheduleData } from './data/scheduleData';
 
-function transformScheduleData(raw) {
-  return raw.map(item => {
-    if (!item["Forecast Production Date"]) return null;
-    const [day, month, year] = item["Forecast Production Date"].split("/");
-    return {
-      forecastProductionDate: `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`,
-      chassisNo: item["Chassis"] || "",
-      dealer: item["Dealer"] || "Unknown"
-    };
-  }).filter(Boolean);
-}
-
 function App() {
   const [activeView, setActiveView] = useState('schedule');
   const [scheduleData, setScheduleData] = useState([]);
@@ -48,12 +36,10 @@ function App() {
         setLoading(true);
         try {
           const firebaseData = await fetchScheduleData();
-          const transformed = transformScheduleData(firebaseData);
-          setScheduleData(transformed);
+          setScheduleData(firebaseData);
         } catch (firebaseError) {
           console.error("Error fetching from Firebase, using mock data:", firebaseError);
-          const transformed = transformScheduleData(mockScheduleData);
-          setScheduleData(transformed);
+          setScheduleData(mockScheduleData);
         }
       } catch (err) {
         console.error("Fatal error fetching schedule data:", err);

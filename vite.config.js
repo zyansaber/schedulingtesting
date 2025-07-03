@@ -12,10 +12,20 @@ export default defineConfig({
   },
   server: {
     port: 3000,
-    host: '0.0.0.0'
+    host: '0.0.0.0',
+    allowedHosts: [
+      'schedule-final.onrender.com',  
+      '.onrender.com',
+      'localhost'
+    ]
   },
   preview: {
     port: process.env.PORT || 4173,
-    host: '0.0.0.0'
+    host: '0.0.0.0',
+    allowedHosts: [
+      'schedule-final.onrender.com',
+      '.onrender.com',
+      'localhost'
+    ]
   }
 })

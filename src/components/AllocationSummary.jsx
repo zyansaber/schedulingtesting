@@ -32,18 +32,18 @@ const AllocationSummary = ({ fullData }) => {
   ).sort();
 
   const [selectedMonths, setSelectedMonths] = useState(allMonths);
-  const [expandedMonth, setExpandedMonth] = useState(null);
+  const [expandedMonths, setExpandedMonths] = useState([]);
 
-  const handleToggleMonth = (month) => {
-    if (selectedMonths.includes(month)) {
-      setSelectedMonths(selectedMonths.filter(m => m !== month));
-    } else {
-      setSelectedMonths([...selectedMonths, month]);
-    }
+  const toggleSelectedMonth = (month) => {
+    setSelectedMonths(prev =>
+      prev.includes(month) ? prev.filter(m => m !== month) : [...prev, month]
+    );
   };
 
-  const handleExpandMonth = (month) => {
-    setExpandedMonth(expandedMonth === month ? null : month);
+  const toggleExpandMonth = (month) => {
+    setExpandedMonths(prev =>
+      prev.includes(month) ? prev.filter(m => m !== month) : [...prev, month]
+    );
   };
 
   const data2025 = transformed.filter(d => {
@@ -78,15 +78,16 @@ const AllocationSummary = ({ fullData }) => {
     <div className="p-4 overflow-auto">
       <h2 className="text-xl font-semibold mb-4">Allocation Summary (2025)</h2>
 
-      <div className="mb-4 flex flex-wrap gap-2">
+      <div className="mb-4 flex flex-wrap gap-4">
         {allMonths.map(month => (
-          <button
-            key={month}
-            className={`px-2 py-1 border rounded ${selectedMonths.includes(month) ? "bg-indigo-100 border-indigo-400 text-indigo-800" : "bg-white text-gray-600"}`}
-            onClick={() => handleToggleMonth(month)}
-          >
-            {month}
-          </button>
+          <label key={month} className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              checked={selectedMonths.includes(month)}
+              onChange={() => toggleSelectedMonth(month)}
+            />
+            <span>{month}</span>
+          </label>
         ))}
       </div>
 
@@ -96,7 +97,9 @@ const AllocationSummary = ({ fullData }) => {
             <th className="border p-2 bg-gray-100 sticky left-0 z-10">Dealer</th>
             {selectedMonths.map(month => (
               <React.Fragment key={month}>
-                <th className="border p-2 bg-gray-100 text-center">Occ {month}</th>
+                <th className="border p-2 bg-gray-100 text-center cursor-pointer" onClick={() => toggleExpandMonth(month)}>
+                  Occ {month} {expandedMonths.includes(month) ? "▲" : "▼"}
+                </th>
                 <th className="border p-2 bg-gray-100 text-center">Emp {month}</th>
               </React.Fragment>
             ))}
@@ -121,35 +124,29 @@ const AllocationSummary = ({ fullData }) => {
                   );
                 })}
               </tr>
-              {expandedMonth && selectedMonths.includes(expandedMonth) && (
-                Object.entries(monthDateDealerStats[expandedMonth] || {}).sort().map(([date, dealerMap]) => (
-                  <tr key={date + dealer}>
-                    <td className="border px-2 py-1 sticky left-0 bg-gray-50 text-xs">{date}</td>
-                    {selectedMonths.map(month => {
-                      if (month !== expandedMonth) return [<td key={month + "-occ"}></td>, <td key={month + "-emp"}></td>];
-                      const stats = dealerMap[dealer] || { Occupied: 0, Empty: 0 };
-                      return [
-                        <td key={month + "-occ"} className="border p-1 text-green-600 text-xs text-center">{stats.Occupied}</td>,
-                        <td key={month + "-emp"} className="border p-1 text-red-600 text-xs text-center">{stats.Empty}</td>
-                      ];
-                    })}
-                  </tr>
-                ))
-              )}
+              {expandedMonths.includes(month => true) &&
+                expandedMonths.map(month =>
+                  Object.entries(monthDateDealerStats[month] || {}).sort().map(([date, dealerMap]) => {
+                    const stats = dealerMap[dealer];
+                    if (!stats) return null;
+                    return (
+                      <tr key={date + dealer}>
+                        <td className="border px-2 py-1 sticky left-0 bg-gray-50 text-xs">{date}</td>
+                        {selectedMonths.map(m => {
+                          if (m !== month) return [<td key={m + "-occ"}></td>, <td key={m + "-emp"}></td>];
+                          return [
+                            <td key={m + "-occ"} className="border p-1 text-green-600 text-xs text-center">{stats.Occupied}</td>,
+                            <td key={m + "-emp"} className="border p-1 text-red-600 text-xs text-center">{stats.Empty}</td>
+                          ];
+                        })}
+                      </tr>
+                    );
+                  })
+                )}
             </React.Fragment>
           ))}
         </tbody>
       </table>
-
-      <div className="mt-4">
-        <label className="text-sm mr-2 font-medium">Expand Month:</label>
-        <select value={expandedMonth || ""} onChange={e => setExpandedMonth(e.target.value || null)} className="border p-1 rounded text-sm">
-          <option value="">-- None --</option>
-          {selectedMonths.map(m => (
-            <option key={m} value={m}>{m}</option>
-          ))}
-        </select>
-      </div>
     </div>
   );
 };

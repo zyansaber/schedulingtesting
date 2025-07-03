@@ -82,7 +82,7 @@ function App() {
             {menuItems.map((item) => (
               <li key={item.id}>
                 <button
-                  className={\`flex items-center px-4 py-2 text-sm rounded-md \${activeView === item.id ? 'bg-indigo-50 text-indigo-700' : 'text-gray-600 hover:bg-gray-50'}\`}
+                  className={`flex items-center px-4 py-2 text-sm rounded-md \${activeView === item.id ? 'bg-indigo-50 text-indigo-700' : 'text-gray-600 hover:bg-gray-50'}`}
                   onClick={() => handleMenuClick(item.id)}
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">

@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 
 const transformData = (raw) => {
@@ -12,6 +13,15 @@ const transformData = (raw) => {
       };
     })
     .filter(Boolean);
+};
+
+const getContrastColor = (hex) => {
+  if (!hex) return "#000";
+  const r = parseInt(hex.substr(1, 2), 16);
+  const g = parseInt(hex.substr(3, 2), 16);
+  const b = parseInt(hex.substr(5, 2), 16);
+  const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+  return brightness > 140 ? "#000" : "#fff";
 };
 
 const AllocationSummary = ({ data, dealerColors }) => {
@@ -48,24 +58,22 @@ const AllocationSummary = ({ data, dealerColors }) => {
   });
 
   const allMonths = Object.keys(monthDealerMap).sort();
-
   const toggleMonth = (month) => {
     setVisibleMonths(prev =>
       prev.includes(month) ? prev.filter(m => m !== month) : [...prev, month]
     );
   };
-
   const handleExpand = (month) => {
     setExpandedMonth(prev => (prev === month ? null : month));
   };
 
   return (
     <div className="overflow-auto p-4">
-      <h2 className="text-xl font-semibold mb-4">Allocation Summary (2025)</h2>
+      <h2 className="text-2xl font-semibold mb-6 text-gray-800">Allocation Summary (2025)</h2>
 
       <div className="mb-4">
         <label className="font-medium">Select Months:</label>
-        <div className="flex flex-wrap gap-2 mt-2">
+        <div className="flex flex-wrap gap-3 mt-2">
           {allMonths.map(month => (
             <label key={month} className="text-sm flex items-center gap-1">
               <input
@@ -79,21 +87,19 @@ const AllocationSummary = ({ data, dealerColors }) => {
         </div>
       </div>
 
-      <table className="min-w-full border-collapse text-sm table-fixed">
+      <table className="min-w-full border-collapse text-sm shadow rounded overflow-hidden">
         <thead>
           <tr>
             <th className="border p-2 bg-gray-100 sticky left-0 z-10 w-40">Dealer</th>
             {visibleMonths.map(month => (
               <th key={month} colSpan={2} className="border p-2 bg-gray-100 text-center min-w-32">
-                {month}
-                <div>
-                  <button
-                    onClick={() => handleExpand(month)}
-                    className="text-xs text-blue-600 underline"
-                  >
-                    {expandedMonth === month ? "Collapse" : "Expand"}
-                  </button>
-                </div>
+                <div className="text-md font-semibold">{month}</div>
+                <button
+                  onClick={() => handleExpand(month)}
+                  className="text-xs text-blue-600 underline"
+                >
+                  {expandedMonth === month ? "Collapse" : "Expand"}
+                </button>
               </th>
             ))}
           </tr>
@@ -108,49 +114,45 @@ const AllocationSummary = ({ data, dealerColors }) => {
           </tr>
         </thead>
         <tbody>
-          {allDealers.map(dealer => (
-            <React.Fragment key={dealer}>
-              <tr>
-                <td className="border p-2 sticky left-0 bg-white z-0 font-medium">
-                  <span
-                    className="px-2 py-1 rounded"
-                    style={{
-                      backgroundColor: dealerColors?.[dealer] || "#f0f0f0",
-                      display: "inline-block"
-                    }}
-                  >
-                    {dealer}
-                  </span>
-                </td>
-                {visibleMonths.map(month => {
-                  const stats = monthDealerMap[month]?.[dealer] || { Occupied: 0, Empty: 0 };
-                  return (
-                    <React.Fragment key={month}>
-                      <td className="border p-2 text-center text-green-600">{stats.Occupied}</td>
-                      <td className="border p-2 text-center text-red-600">{stats.Empty}</td>
-                    </React.Fragment>
-                  );
-                })}
-              </tr>
-              {expandedMonth === visibleMonths.find(m => m === expandedMonth) && (
-                Object.entries(monthDateMap[expandedMonth] || {}).sort().map(([date, dealers]) => (
-                  <tr key={dealer + date}>
-                    <td className="border px-2 py-1 text-xs text-gray-500 sticky left-0 bg-white z-0">{date}</td>
-                    {visibleMonths.map(month => {
-                      if (month !== expandedMonth) return <td key={month} colSpan={2}></td>;
-                      const s = dealers[dealer] || { Occupied: 0, Empty: 0 };
-                      return (
-                        <React.Fragment key={month + dealer + date}>
-                          <td className="border px-1 py-1 text-center text-green-600">{s.Occupied}</td>
-                          <td className="border px-1 py-1 text-center text-red-600">{s.Empty}</td>
-                        </React.Fragment>
-                      );
-                    })}
-                  </tr>
-                ))
-              )}
-            </React.Fragment>
-          ))}
+          {allDealers.map(dealer => {
+            const bg = dealerColors?.[dealer] || "#f9fafb";
+            const textColor = getContrastColor(bg);
+            return (
+              <React.Fragment key={dealer}>
+                <tr className="hover:bg-yellow-50 transition">
+                  <td className="border p-2 sticky left-0 z-0 font-medium" style={{ backgroundColor: bg, color: textColor }}>
+                    <span className="px-2 py-1 rounded">{dealer}</span>
+                  </td>
+                  {visibleMonths.map(month => {
+                    const stats = monthDealerMap[month]?.[dealer] || { Occupied: 0, Empty: 0 };
+                    return (
+                      <React.Fragment key={month}>
+                        <td className="border p-2 text-center text-green-700 text-lg font-bold">{stats.Occupied}</td>
+                        <td className="border p-2 text-center text-red-600 text-lg font-bold">{stats.Empty}</td>
+                      </React.Fragment>
+                    );
+                  })}
+                </tr>
+                {expandedMonth === visibleMonths.find(m => m === expandedMonth) && (
+                  Object.entries(monthDateMap[expandedMonth] || {}).sort().map(([date, dealers]) => (
+                    <tr key={dealer + date} className="bg-gray-50">
+                      <td className="border px-2 py-1 text-xs text-gray-500 sticky left-0 bg-white z-0">{date}</td>
+                      {visibleMonths.map(month => {
+                        if (month !== expandedMonth) return <td key={month} colSpan={2}></td>;
+                        const s = dealers[dealer] || { Occupied: 0, Empty: 0 };
+                        return (
+                          <React.Fragment key={month + dealer + date}>
+                            <td className="border px-1 py-1 text-center text-green-600 text-sm">{s.Occupied}</td>
+                            <td className="border px-1 py-1 text-center text-red-600 text-sm">{s.Empty}</td>
+                          </React.Fragment>
+                        );
+                      })}
+                    </tr>
+                  ))
+                )}
+              </React.Fragment>
+            );
+          })}
         </tbody>
       </table>
     </div>
